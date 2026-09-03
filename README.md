@@ -2,9 +2,9 @@ OK MEHULI, GAGAN, AVIRAL, UNI aur ESPECIALLY ARUN!!
 MENE (ARINJAY) ne base framework bana diya hai humare programme ka
 Usse use karne ke liye yeh steps follow karna:
   step 1:  Github desktop se main branch open karna apne VS Code pe
-  step 2:  Terminal par type karna :  python manage.py createsuperuser
+  step 2:  Terminal par type karna :  ```python manage.py createsuperuser```
               usme apna username, email aur password  daalna !!!(password type karte hue terminal par kuch show nahi hota hai par password type hota hai!!).!!!
-  step 3:  Terminal par type karna : python manage.py runserver
+  step 3:  Terminal par type karna : ```python manage.py runserver```
               Terminal par yeh run karne ke baad yeh show hoga
               
               Watching for file changes with StatReloader
