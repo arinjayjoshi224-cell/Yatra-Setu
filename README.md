@@ -19,4 +19,4 @@ Usse use karne ke liye yeh steps follow karna:
               WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
               For more information on production servers see: https://docs.djangoproject.com/en/6.1/howto/deployment/
             
-  step 4:  fir apne browser par yeh URL copy paste karna: http://127.0.0.1:8000/
+  step 4:  fir apne browser par yeh URL copy paste karna: http://127.0.0.1:8000/admin
