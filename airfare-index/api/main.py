@@ -58,25 +58,56 @@ def get_indices(
         query = query.filter(CalculatedIndexDB.route == route.upper())
     return query.order_by(CalculatedIndexDB.calculation_time.desc()).limit(limit).all()
 
+@app.get("/api/v1/routes")
+def list_available_routes(db: Session = Depends(get_db)):
+    """List all unique flight corridors tracked in the database."""
+    routes = db.query(FlightPriceDB.origin, FlightPriceDB.destination).distinct().all()
+    corridors = sorted(list({f"{r.origin}-{r.destination}" for r in routes}))
+    return {"tracked_routes": corridors, "count": len(corridors)}
+
 @app.get("/api/v1/latest")
-def get_latest_index(route: str = "DEL-BOM", db: Session = Depends(get_db)):
-    latest = (
-        db.query(CalculatedIndexDB)
-        .filter(CalculatedIndexDB.route == route.upper())
-        .order_by(CalculatedIndexDB.calculation_time.desc())
-        .first()
-    )
-    if not latest:
-        raise HTTPException(status_code=404, detail=f"No index records found for {route}")
+def get_latest_index(route: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Fetch the most recent index calculation.
+    Pass ?route=BLR-DEL to filter, or omit to get the latest calculation across all routes.
+    """
+    query = db.query(CalculatedIndexDB)
     
-    return {
-        "route": latest.route,
-        "index_type": latest.index_type,
-        "index_value": latest.index_value,
-        "calculation_time": latest.calculation_time,
-        "sample_size": latest.matched_flight_count,
-        "status": "normal"
-    }
+    if route:
+        latest = (
+            query.filter(CalculatedIndexDB.route == route.upper())
+            .order_by(CalculatedIndexDB.calculation_time.desc())
+            .first()
+        )
+        if not latest:
+            raise HTTPException(status_code=404, detail=f"No index records found for route {route}")
+        return {
+            "route": latest.route,
+            "index_type": latest.index_type,
+            "index_value": latest.index_value,
+            "calculation_time": latest.calculation_time,
+            "sample_size": latest.matched_flight_count,
+            "status": "normal"
+        }
+    
+    # Return the latest calculation for each tracked corridor
+    all_routes = [r[0] for r in db.query(CalculatedIndexDB.route).distinct().all()]
+    results = []
+    for r in all_routes:
+        record = (
+            query.filter(CalculatedIndexDB.route == r)
+            .order_by(CalculatedIndexDB.calculation_time.desc())
+            .first()
+        )
+        if record:
+            results.append({
+                "route": record.route,
+                "index_type": record.index_type,
+                "index_value": record.index_value,
+                "calculation_time": record.calculation_time,
+                "sample_size": record.matched_flight_count
+            })
+    return results
 
 @app.get("/api/v1/summary", response_model=List[RouteSummary])
 def get_market_summary(db: Session = Depends(get_db)):
