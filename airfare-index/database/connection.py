@@ -1,15 +1,14 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from sqlalchemy import BigInteger, Column, DateTime, Integer, String, create_engine
+from sqlalchemy import BigInteger, Column, DateTime, Float, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-# Replace YOUR_POSTGRES_PASSWORD with the password you set during installation
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/airfare_db"
+    "postgresql://postgres:aviralsaini@localhost:5432/airfare_db"
 )
 
 engine = create_engine(DATABASE_URL, echo=False)
@@ -31,6 +30,18 @@ class FlightPriceDB(Base):
     travel_date = Column(String(20), nullable=False)
     scraped_at = Column(DateTime, default=datetime.utcnow)
 
+class CalculatedIndexDB(Base):
+    __tablename__ = "airfare_price_indices"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    calculation_time = Column(DateTime, default=datetime.utcnow)
+    route = Column(String(10), nullable=False)           # e.g., "DEL-BOM" or "ALL"
+    time_horizon = Column(String(10), default="T+30")    # e.g., T+0, T+7, T+30
+    index_type = Column(String(20), default="JEVONS")    # JEVONS, CARLI, DUTOT
+    index_value = Column(Float, nullable=False)          # Baseline = 100.0
+    matched_flight_count = Column(Integer, nullable=False)
+    base_period = Column(DateTime, nullable=False)
+
 def init_db():
     Base.metadata.create_all(bind=engine)
-    print("Database connection established and table verified/created.")
+    print("Database tables verified/created successfully.")
