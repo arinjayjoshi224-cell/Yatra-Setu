@@ -133,3 +133,11 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+CELERY_BROKER_URL = 'redis://localhost:6379/0' 
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BEAT_SCHEDULE = {
+    'scrape_yatra_route': {
+        'task': 'apps.scraper_engine.tasks.scrape_yatra_route',
+        'schedule': 10800,  # every 3 hours
+    },
+}

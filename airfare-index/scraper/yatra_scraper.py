@@ -19,7 +19,7 @@ async def scrape_and_save(origin: str, dest: str, depart_date: str):
     async with async_playwright() as p:
         # Launch Chromium with HTTP/2 disabled and automation bypass flags
         browser = await p.chromium.launch(
-            headless=False,
+            headless=True,
             args=[
                 "--disable-http2",
                 "--disable-blink-features=AutomationControlled",
