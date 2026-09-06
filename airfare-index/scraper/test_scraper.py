@@ -9,6 +9,5 @@ print("Status code:", response.status_code)
 
 soup = BeautifulSoup(response.text, "html.parser")
 
-title = soup.title
-
-print("Page title:", title.text)
+print("Page title:", soup.title.text)
+print("Heading:", soup.h1.text)
