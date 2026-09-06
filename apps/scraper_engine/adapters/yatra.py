@@ -46,7 +46,6 @@ class YatraAdapter(BaseAirlineAdapter):
             browser = await p.chromium.launch(
                 headless=False,  # must be headless for Celery/server use
                 args=[
-                    "--disable-http2",
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
                 ],
