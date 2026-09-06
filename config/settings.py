@@ -133,3 +133,17 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+CELERY_BROKER_URL = 'redis://localhost:6379/0' 
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'yatra-near-term-daily': {
+        'task': 'apps.scraper_engine.tasks.dispatch_yatra_near_term',
+        'schedule': crontab(hour=3, minute=0),   # once daily, 3 AM
+    },
+    'yatra-far-term-weekly': {
+        'task': 'apps.scraper_engine.tasks.dispatch_yatra_far_term',
+        'schedule': crontab(hour=4, minute=0, day_of_week=1),  # once weekly, Monday 4 AM
+    },
+}
