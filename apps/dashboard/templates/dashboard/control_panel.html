@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Yatra-Setu Control Panel</title>
+<style>
+    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e5e7eb; margin: 0; padding: 2rem; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+    .card { background: #1a1d24; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    button { background: #3b82f6; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
+    button.stop { background: #ef4444; }
+    button:hover { opacity: 0.9; }
+    input { background: #0f1115; border: 1px solid #333; color: #e5e7eb; padding: 0.5rem; border-radius: 6px; margin-right: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #2a2d34; }
+    #status-msg { margin-top: 1rem; color: #9ca3af; }
+</style>
+</head>
+<body>
+
+<h1>Yatra-Setu Control Panel</h1>
+
+<div class="card">
+    <h3>System Control</h3>
+    <div class="row">
+        <button onclick="callApi('/dashboard/start/')">Start System</button>
+        <button class="stop" onclick="callApi('/dashboard/stop/')">Stop System</button>
+        <button onclick="callApi('/dashboard/scrape-now/')">Scrape Now</button>
+    </div>
+    <div id="status-msg"></div>
+</div>
+
+<div class="card">
+    <h3>Add Route</h3>
+    <div class="row">
+        <input id="origin_code" placeholder="Origin IATA (e.g. DEL)">
+        <input id="destination_code" placeholder="Destination IATA (e.g. BOM)">
+        <button onclick="addRoute()">Add Route & Queue Scrape</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Add Airline</h3>
+    <div class="row">
+        <input id="airline_code" placeholder="Code (e.g. 6E)">
+        <input id="airline_name" placeholder="Name (e.g. IndiGo)">
+        <button onclick="addAirline()">Add Airline</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Scraped Fares</h3>
+    <form method="get">
+        <input name="airline" placeholder="Airline code filter">
+        <input name="origin" placeholder="Origin filter">
+        <input name="destination" placeholder="Destination filter">
+        <button type="submit">Filter</button>
+    </form>
+    <table>
+        <tr><th>Airline</th><th>Route</th><th>Flight</th><th>Travel Date</th><th>Fare</th><th>Scraped At</th></tr>
+        {% for s in snapshots %}
+        <tr>
+            <td>{{ s.airline.name }}</td>
+            <td>{{ s.route.origin.iata_code }} → {{ s.route.destination.iata_code }}</td>
+            <td>{{ s.flight_number }}</td>
+            <td>{{ s.travel_date }}</td>
+            <td>₹{{ s.total_fare }}</td>
+            <td>{{ s.scraped_at }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<script>
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+async function callApi(url, body) {
+    document.getElementById('status-msg').innerText = "Working...";
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : null,
+    });
+    const data = await res.json();
+    document.getElementById('status-msg').innerText = data.message || (data.ok ? "Done." : "Something went wrong.");
+    return data;
+}
+
+async function addRoute() {
+    const origin_code = document.getElementById('origin_code').value;
+    const destination_code = document.getElementById('destination_code').value;
+    await callApi('/dashboard/add-route/', { origin_code, destination_code });
+    location.reload();
+}
+
+async function addAirline() {
+    const code = document.getElementById('airline_code').value;
+    const name = document.getElementById('airline_name').value;
+    await callApi('/dashboard/add-airline/', { code, name });
+    location.reload();
+}
+</script>
+
+</body>
+</html>

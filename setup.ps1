@@ -97,14 +97,10 @@ if (-not $redisRunning) {
     Write-Host "  Redis container already running." -ForegroundColor Green
 }
 
-if (-not (Test-Path ".\.env")) {
-    Write-Host ""
-    Write-Host "  NOTE: No .env file found." -ForegroundColor Red
-    Write-Host "  Ask the project owner for the .env file (database credentials, etc.)" -ForegroundColor Red
-    Write-Host "  and place it in this project's root folder before continuing." -ForegroundColor Red
-    Write-Host "  Setup will pause here until .env is present." -ForegroundColor Red
-    exit 1
-}
+Write-Host "  Note: this project currently uses SQLite, so no .env file is required." -ForegroundColor Yellow
+Write-Host "  This means your database will start EMPTY and separate from anyone else's." -ForegroundColor Yellow
+Write-Host "  Scraped data will not be shared across machines until the project moves to a shared database." -ForegroundColor Yellow
+Write-Host ""
 
 python manage.py migrate
 if ($LASTEXITCODE -ne 0) {
