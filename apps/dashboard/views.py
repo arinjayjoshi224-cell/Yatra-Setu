@@ -81,3 +81,28 @@ def add_airline(request):
         defaults={"name": data.get("name", data["code"]), "scraper_adapter_key": "yatra"},
     )
     return JsonResponse({"ok": True, "created": created})
+
+
+@csrf_exempt
+@require_POST
+def scrape_now(request):
+    routes = Route.objects.all()
+
+    if not routes.exists():
+        return JsonResponse({
+            "ok": False,
+            "message": "No routes available to scrape."
+        })
+
+    target_date = (date.today() + timedelta(days=7)).isoformat()
+
+    queued = 0
+
+    for route in routes:
+        scrape_yatra_route.delay(route.id, target_date)
+        queued += 1
+
+    return JsonResponse({
+        "ok": True,
+        "message": f"Queued {queued} route(s) for scraping."
+    })
