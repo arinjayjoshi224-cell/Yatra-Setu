@@ -137,9 +137,22 @@ def start_docker(timeout=60):
 
 
 def stop_docker():
-    subprocess.run(["docker", "stop", REDIS_CONTAINER_NAME], capture_output=True)
-    subprocess.run(["taskkill", "/IM", "Docker Desktop.exe", "/F"], capture_output=True)
-    return {"ok": True, "message": "Docker stopped."}
+    result = subprocess.run(
+        ["docker", "stop", REDIS_CONTAINER_NAME],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        return {
+            "ok": False,
+            "message": f"Failed to stop Redis: {result.stderr.strip()}"
+        }
+
+    return {
+        "ok": True,
+        "message": "Redis stopped. Docker Desktop remains running."
+    }
 
 
 def start_worker():
