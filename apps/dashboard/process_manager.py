@@ -26,28 +26,114 @@ def is_docker_running():
 
 
 def start_docker(timeout=60):
-    if is_docker_running():
-        return {"ok": True, "message": "Docker already running."}
+    # 1. Start Docker Desktop if Docker isn't running
+    if not is_docker_running():
+        subprocess.Popen([DOCKER_DESKTOP_PATH])
 
-    subprocess.Popen([DOCKER_DESKTOP_PATH])
-    waited = 0
-    while waited < timeout:
-        if is_docker_running():
-            break
-        time.sleep(3)
-        waited += 3
-    else:
-        return {"ok": False, "message": "Docker Desktop didn't start in time. Check it manually."}
+        waited = 0
+        while waited < timeout:
+            if is_docker_running():
+                break
 
-    # Start the Redis container if it isn't already running
-    running = subprocess.run(
-        ["docker", "ps", "--filter", f"name={REDIS_CONTAINER_NAME}", "--filter", "status=running", "-q"],
-        capture_output=True, text=True,
+            time.sleep(3)
+            waited += 3
+        else:
+            return {
+                "ok": False,
+                "message": "Docker Desktop didn't start in time. Check it manually."
+            }
+
+    # 2. Check whether the Redis container exists
+    container_exists = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "-a",
+            "--filter",
+            f"name=^{REDIS_CONTAINER_NAME}$",
+            "-q"
+        ],
+        capture_output=True,
+        text=True
     ).stdout.strip()
-    if not running:
-        subprocess.run(["docker", "run", "-d", "-p", "6379:6379", "--name", REDIS_CONTAINER_NAME, "redis"])
 
-    return {"ok": True, "message": "Docker and Redis started."}
+    # 3. If it exists, start it
+    if container_exists:
+        running = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "--filter",
+                f"name=^{REDIS_CONTAINER_NAME}$",
+                "--filter",
+                "status=running",
+                "-q"
+            ],
+            capture_output=True,
+            text=True
+        ).stdout.strip()
+
+        if not running:
+            result = subprocess.run(
+                ["docker", "start", REDIS_CONTAINER_NAME],
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                return {
+                    "ok": False,
+                    "message": f"Failed to start Redis: {result.stderr.strip()}"
+                }
+
+    # 4. If it doesn't exist, create it
+    else:
+        result = subprocess.run(
+            [
+                "docker",
+                "run",
+                "-d",
+                "-p",
+                "6379:6379",
+                "--name",
+                REDIS_CONTAINER_NAME,
+                "redis"
+            ],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            return {
+                "ok": False,
+                "message": f"Failed to create Redis: {result.stderr.strip()}"
+            }
+
+    # 5. Verify Redis is actually running
+    running = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "--filter",
+            f"name=^{REDIS_CONTAINER_NAME}$",
+            "--filter",
+            "status=running",
+            "-q"
+        ],
+        capture_output=True,
+        text=True
+    ).stdout.strip()
+
+    if not running:
+        return {
+            "ok": False,
+            "message": "Redis container exists but is not running."
+        }
+
+    return {
+        "ok": True,
+        "message": "Docker and Redis started."
+    }
 
 
 def stop_docker():
